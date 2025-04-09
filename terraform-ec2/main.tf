@@ -8,6 +8,6 @@ resource "aws_instance" "ec2_instances" {
   instance_type = var.instance_type
 
   tags = {
-    Name = "Terraform-EC2-${count.index + 1}"
+    Name = "${var.instance_name}-${count.index + 1}"  # Use the instance_name for tagging
   }
 }
