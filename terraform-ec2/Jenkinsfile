@@ -1,0 +1,61 @@
+pipeline {
+    agent terraform
+
+    parameters {
+        string(name: 'instance_name', defaultValue: 'MyEC2Instance', description: 'Name of the EC2 instance')
+        string(name: 'instance_count', defaultValue: '2', description: 'Number of EC2 instances to create')
+        string(name: 'region', defaultValue: 'ap-southeast-2', description: 'AWS Region')
+        string(name: 'ami_id', defaultValue: 'ami-0f5d1713c9af4fe30', description: 'AMI ID')
+        string(name: 'instance_type', defaultValue: 't2.micro', description: 'Instance type')
+    }
+
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id') // Optional if using Jenkins' credentials
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key') // Optional if using Jenkins' credentials
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                // Clone the Terraform repository from GitHub
+                git 'https://github.com/ecs-DevOps/terraform_repo.git'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                // Initialize Terraform
+                script {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                // Generate and show the Terraform execution plan
+                script {
+                    sh "terraform plan -var=\"region=${params.region}\" -var=\"ami_id=${params.ami_id}\" -var=\"instance_type=${params.instance_type}\" -var=\"instance_count=${params.instance_count}\" -var=\"instance_name=${params.instance_name}\""
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                // Apply the Terraform plan to create the resources
+                script {
+                    sh "terraform apply -auto-approve -var=\"region=${params.region}\" -var=\"ami_id=${params.ami_id}\" -var=\"instance_type=${params.instance_type}\" -var=\"instance_count=${params.instance_count}\" -var=\"instance_name=${params.instance_name}\""
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Terraform execution completed successfully.'
+        }
+        failure {
+            echo 'Terraform execution failed.'
+        }
+    }
+}
