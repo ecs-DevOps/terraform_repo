@@ -1,5 +1,5 @@
 pipeline {
-    agent terraform
+    agent { label 'terraform' }
 
     parameters {
         string(name: 'instance_name', defaultValue: 'MyEC2Instance', description: 'Name of the EC2 instance')
