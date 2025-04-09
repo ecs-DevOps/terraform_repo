@@ -13,33 +13,54 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 // Clone the Terraform repository from GitHub
-                git 'https://github.com/ecs-DevOps/terraform_repo.git'
+                git credentialsId: 'github-credentials', branch: 'main', url: 'https://github.com/ecs-DevOps/terraform_repo.git'
             }
         }
 
-        stage('Terraform Init') {
+        stage('Change Directory to terraform-ec2') {
             steps {
-                // Initialize Terraform
                 script {
-                    sh 'terraform init'
+                    // Change directory to the terraform-ec2 folder
+                    dir('terraform-ec2') {
+                        // Perform initialization and Terraform commands inside terraform-ec2 directory
+                        sh 'terraform init'
+                    }
                 }
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                // Generate and show the Terraform execution plan
                 script {
-                    sh "terraform plan -var=\"region=${params.region}\" -var=\"ami_id=${params.ami_id}\" -var=\"instance_type=${params.instance_type}\" -var=\"instance_count=${params.instance_count}\" -var=\"instance_name=${params.instance_name}\""
+                    // Generate and show the Terraform execution plan within the terraform-ec2 directory
+                    dir('terraform-ec2') {
+                        sh """
+                        terraform plan \
+                        -var="region=${params.region}" \
+                        -var="ami_id=${params.ami_id}" \
+                        -var="instance_type=${params.instance_type}" \
+                        -var="instance_count=${params.instance_count}" \
+                        -var="instance_name=${params.instance_name}"
+                        """
+                    }
                 }
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                // Apply the Terraform plan to create the resources
                 script {
-                    sh "terraform apply -auto-approve -var=\"region=${params.region}\" -var=\"ami_id=${params.ami_id}\" -var=\"instance_type=${params.instance_type}\" -var=\"instance_count=${params.instance_count}\" -var=\"instance_name=${params.instance_name}\""
+                    // Apply the Terraform plan to create the resources within the terraform-ec2 directory
+                    dir('terraform-ec2') {
+                        sh """
+                        terraform apply -auto-approve \
+                        -var="region=${params.region}" \
+                        -var="ami_id=${params.ami_id}" \
+                        -var="instance_type=${params.instance_type}" \
+                        -var="instance_count=${params.instance_count}" \
+                        -var="instance_name=${params.instance_name}"
+                        """
+                    }
                 }
             }
         }
